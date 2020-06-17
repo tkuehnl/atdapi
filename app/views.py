@@ -7,7 +7,7 @@ import os
 from OCC.Extend.DataExchange import read_step_file
 from OCC.Core.Tesselator import ShapeTesselator
 
-app.config["MODEL_UPLOADS"] = "C:/Users/todd/atdapi/app/uploads"
+app.config["MODEL_UPLOADS"] = "c:/Users/todd/atd/atdapi/app/uploads"
 app.config["ALLOWED_IMAGE_EXTENSIONS"] = ["STEP"]
 
 def allowed_image(filename):
