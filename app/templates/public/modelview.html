@@ -1,0 +1,138 @@
+{% extends "public/templates/public_template.html" %}
+
+{% block title %}3D Viewer{% endblock %}
+
+{% block main %}
+<div class="container">
+    <div class="row">
+      <div class="col">
+  
+        <h1>3D Model</h1>
+        <hr>
+  
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">{{ modelname }}</h5>
+            <hr>
+            <div id="container" style="display: block;"></div>
+          </div>
+        </div>
+  
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/three.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stats.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/OrbitControls.js') }}"></script>
+<script type="text/javascript">
+    var camera, scene, renderer, object, stats, container, shape_material;
+    var targetRotation = 0;
+    var targetRotationOnMouseDown = 0;
+    var targetRotationY = 0;
+    var targetRotationYOnMouseDown = 0;
+    var mouseX = 0;
+    var mouseXOnMouseDown = 0;
+    var mouseY = 0;
+    var mouseYOnMouseDown = 0;
+    var moveForward = false;
+    var moveBackward = false;
+    var moveLeft = false;
+    var moveRight = false;
+    var moveUp = false;
+    var moveDown = false;
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
+
+    init();
+    animate();
+
+    function init() {
+        console.log("script init ...");
+
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+
+        camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.001, 99999 );
+
+        controls = new THREE.OrbitControls( camera );
+        controls.addEventListener( 'change', light_update );
+
+        scene = new THREE.Scene();
+        scene.add( new THREE.AmbientLight(0x101010));
+        directionalLight = new THREE.DirectionalLight( 0xBDBDBD );
+        directionalLight.position.copy( camera.position );
+        scene.add( directionalLight );
+        light1 = new THREE.PointLight( 0xffffff );
+        scene.add( light1 );
+
+        phong_material = new THREE.MeshPhongMaterial( {
+            color: 0x6E6E6C,
+            specular: 0x555555,
+            shininess: 10
+        });
+
+        var loader = new THREE.BufferGeometryLoader();
+
+        // load a resource
+        loader.load(
+            // resource URL
+            '/uploads/{{ modelname }}',                    
+            // Function when resource is loaded
+            function ( geometry ) {
+                object = new THREE.Mesh(geometry , phong_material);
+                object.overdraw = true;
+
+                geometry.center();
+                geometry.computeBoundingSphere();
+                radius = geometry.boundingSphere.radius;
+                aspect = 80 / 60;
+                distanceFactor = Math.abs( aspect * radius / Math.sin( camera.fov/2 ));
+
+                camera.position.set( 0, 0, distanceFactor/5 );
+
+                scene.add( object );
+            },
+            // Function called when download progresses
+            function ( xhr ) {
+                //updateProgressBar(xhr.loaded / xhr.total * 100);
+            },
+            // Function called when download errors
+            function ( xhr ) {
+                console.log( 'An error happened' );
+            }
+        );
+
+        renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer.setClearColor("#ffffff");
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild( renderer.domElement );
+
+        stats = new Stats();
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.top = '0px';
+        container.appendChild( stats.domElement );
+        window.addEventListener( 'resize', onWindowResize, false );
+    }
+
+    function animate() {
+        requestAnimationFrame( animate );
+        controls.update();
+        render();
+        stats.update();
+    }
+    function render() {
+        renderer.render( scene, camera );
+    }
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+    function light_update(){
+        directionalLight.position.copy( camera.position );
+    }
+</script>
+{% endblock %}

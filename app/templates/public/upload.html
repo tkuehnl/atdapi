@@ -1,0 +1,32 @@
+{% extends "public/templates/public_template.html" %}
+
+{% block title %}Upload{% endblock %}
+
+{% block main %}
+
+<div class="container">
+  <div class="row">
+    <div class="col">
+
+      <h1>Upload an Model</h1>
+      <hr>
+
+      <form action="/upload-model" method="POST" enctype="multipart/form-data">
+
+        <div class="form-group">
+          <label>Select Model</label>
+          <div class="custom-file">
+            <input type="file" class="custom-file-input" name="model" id="model">
+            <label class="custom-file-label" for="model">Select Model...</label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Upload</button>
+
+      </form>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
