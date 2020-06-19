@@ -7,7 +7,7 @@ import os
 from OCC.Extend.DataExchange import read_step_file
 from OCC.Core.Tesselator import ShapeTesselator
 
-app.config["MODEL_UPLOADS"] = "c:/Users/todd/atd/atdapi/app/uploads"
+app.config["MODEL_UPLOADS"] = "/home/todd_kuehnl/atdapi/app/uploads"
 app.config["ALLOWED_IMAGE_EXTENSIONS"] = ["STEP"]
 
 def allowed_image(filename):
@@ -57,7 +57,7 @@ def upload_model():
             filename, file_extension = os.path.splitext(model.filename)
             big_shp = read_step_file(modelfile)
             tess = ShapeTesselator(big_shp)
-            tess.Compute(compute_edges=False, mesh_quality=80)
+            tess.Compute(compute_edges=False, mesh_quality=1)
             jsonfile = filename + ".json"
             with open(os.path.join(app.config["MODEL_UPLOADS"], jsonfile), "w") as text_file:
                 json_shape = tess.ExportShapeToThreejsJSONString(filename)
