@@ -59,23 +59,33 @@ def upload_model():
             modelfile = os.path.join(app.config["MODEL_UPLOADS"], model.filename)
             model.save(modelfile)
             filename, file_extension = os.path.splitext(model.filename)
-            #big_shp = read_step_file(modelfile)
-            step_reader = STEPControl_Reader()
-            status = step_reader.ReadFile(modelfile)
-            if status == IFSelect_RetDone:
-                ok = step_reader.TransferRoots()
-                _nbs = step_reader.NbShapes()
-                big_shp = step_reader.Shape()
-                tess = ShapeTesselator(big_shp)
+            big_shp = read_step_file(modelfile)
+            shapes = []
+            #EXPORT FULL
+            tess = ShapeTesselator(big_shp)
+            tess.Compute(compute_edges=False, mesh_quality=0.5)
+            jsonfile = filename + ".json"
+            combinedFile = filename + ".json"
+            shapes.append(combinedFile)
+            with open(os.path.join(app.config["MODEL_UPLOADS"], jsonfile), "w") as text_file:
+                json_shape = tess.ExportShapeToThreejsJSONString(filename)
+                json_shape = json_shape.replace("data\\", "data/")
+                json_shape = json_shape.replace("\\step_postprocessed\\", "/step_postprocessed/")
+                text_file.write(json_shape)
+            #Export each subshape
+            all_subshapes = TopologyExplorer(big_shp).solids()
+            i = 0
+            for single_shape in all_subshapes:
+                tess = ShapeTesselator(single_shape)
                 tess.Compute(compute_edges=False, mesh_quality=0.5)
-                jsonfile = filename + ".json"
+                jsonfile = filename + "_" + str(i) + ".json"
                 with open(os.path.join(app.config["MODEL_UPLOADS"], jsonfile), "w") as text_file:
-                    json_shape = tess.ExportShapeToThreejsJSONString(filename)
+                    json_shape = tess.ExportShapeToThreejsJSONString(filename + "_" + str(i))
                     json_shape = json_shape.replace("data\\", "data/")
                     json_shape = json_shape.replace("\\step_postprocessed\\", "/step_postprocessed/")
                     text_file.write(json_shape)
-            else:
-                raise Exception("error could not read step file")
-            return redirect(url_for('modelview', modelname = jsonfile))
+                    shapes.append(jsonfile)
+                i+=1
+            return redirect(url_for('modelview', modelname = combinedFile))
 
     return render_template("public/upload.html")
