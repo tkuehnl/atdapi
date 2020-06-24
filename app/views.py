@@ -1,7 +1,7 @@
 from app import app
 
 from flask import render_template
-from flask import request, redirect, url_for, send_from_directory
+from flask import request, redirect, url_for, send_from_directory, jsonify
 import os
 
 from OCC.Extend.DataExchange import read_step_file
@@ -9,6 +9,7 @@ from OCC.Core.Tesselator import ShapeTesselator
 from OCC.Extend.TopologyUtils import TopologyExplorer
 from OCC.Core.STEPControl import STEPControl_Reader
 from OCC.Core.IFSelect import IFSelect_RetDone, IFSelect_ItemsByEntity
+from OCC.Extend.DataExchange import read_step_file_with_names_colors
 
 #app.config["MODEL_UPLOADS"] = "/home/todd_kuehnl/atdapi/app/uploads"
 app.config["MODEL_UPLOADS"] = "C:/Users/todd/atd/atdapi/app/uploads"
@@ -38,11 +39,18 @@ def admin_dashboard():
 def about():
     return render_template("public/about.html")
 
+def send_models(modelname):
+    outputdir = os.path.join(app.config["MODEL_UPLOADS"], modelname )
+    files = os.listdir(outputdir)
+    return files
+
 @app.route("/modelview/<modelname>")
 def modelview(modelname):
-    print(modelname)
-    
-    return render_template("public/modelview.html", modelname=modelname)
+    return render_template("public/modelview.html", modelname=modelname, models=send_models(modelname))
+
+@app.route("/modelview/<modelname>/<model>")
+def singlemodelview(modelname,model):
+    return render_template("public/singleviewer.html", modelname=modelname, model=model, models=send_models(modelname))
 
 @app.route("/uploads/<path:path>")
 def send_uploads(path):
@@ -59,33 +67,25 @@ def upload_model():
             modelfile = os.path.join(app.config["MODEL_UPLOADS"], model.filename)
             model.save(modelfile)
             filename, file_extension = os.path.splitext(model.filename)
-            big_shp = read_step_file(modelfile)
+            #make output directory
+            outputdir = os.path.join(app.config["MODEL_UPLOADS"], filename )
+            if not os.path.exists(outputdir):
+                os.makedirs(outputdir)
+
+            #big_shp = read_step_file(modelfile)
+            shapes_labels_colors = read_step_file_with_names_colors(modelfile)
             shapes = []
-            #EXPORT FULL
-            tess = ShapeTesselator(big_shp)
-            tess.Compute(compute_edges=False, mesh_quality=0.5)
-            jsonfile = filename + ".json"
-            combinedFile = filename + ".json"
-            shapes.append(combinedFile)
-            with open(os.path.join(app.config["MODEL_UPLOADS"], jsonfile), "w") as text_file:
-                json_shape = tess.ExportShapeToThreejsJSONString(filename)
-                json_shape = json_shape.replace("data\\", "data/")
-                json_shape = json_shape.replace("\\step_postprocessed\\", "/step_postprocessed/")
-                text_file.write(json_shape)
             #Export each subshape
-            all_subshapes = TopologyExplorer(big_shp).solids()
-            i = 0
-            for single_shape in all_subshapes:
-                tess = ShapeTesselator(single_shape)
+            for shpt_lbl_color in shapes_labels_colors:
+                label, c = shapes_labels_colors[shpt_lbl_color]
+                tess = ShapeTesselator(shpt_lbl_color)
                 tess.Compute(compute_edges=False, mesh_quality=0.5)
-                jsonfile = filename + "_" + str(i) + ".json"
-                with open(os.path.join(app.config["MODEL_UPLOADS"], jsonfile), "w") as text_file:
-                    json_shape = tess.ExportShapeToThreejsJSONString(filename + "_" + str(i))
+                jsonfile = label + ".json"
+                with open(os.path.join(outputdir, jsonfile), "w") as text_file:
+                    json_shape = tess.ExportShapeToThreejsJSONString(label)
                     json_shape = json_shape.replace("data\\", "data/")
                     json_shape = json_shape.replace("\\step_postprocessed\\", "/step_postprocessed/")
                     text_file.write(json_shape)
-                    shapes.append(jsonfile)
-                i+=1
-            return redirect(url_for('modelview', modelname = combinedFile))
+            return redirect(url_for('modelview', modelname = filename))
 
     return render_template("public/upload.html")

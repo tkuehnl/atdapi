@@ -14,7 +14,10 @@
           <div class="card-body">
             <h5 class="card-title">{{ modelname }}</h5>
             <hr>
-            <a href="/uploads/{{ modelname }}" class="btn btn-info" role="button">View JSON</a>
+            <a href="/uploads/{{ modelname }}/{{ model }}" class="btn btn-info" role="button">View JSON</a>
+            {% for model in models %}
+                <li class="collection-item"><a href="/modelview/{{ modelname }}/{{ model }}">{{ model }}</a></li>
+            {% endfor %}
             <div id="container" style="display: block;"></div>
           </div>
         </div>
@@ -76,11 +79,16 @@
         });
 
         var loader = new THREE.BufferGeometryLoader();
-
+        const jsArrayOfItems = {{models | tojson}};
         // load a resource
+        for (let index = 0; index < jsArrayOfItems.length; index++) {
+            const element = jsArrayOfItems[index];
+            console.log(element);
+          
+        }
         loader.load(
             // resource URL
-            '/uploads/{{ modelname }}',                    
+            '/uploads/{{ modelname }}/{{ models[0] }}',                    
             // Function when resource is loaded
             function ( geometry ) {
                 object = new THREE.Mesh(geometry , phong_material);
