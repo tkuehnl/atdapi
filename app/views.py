@@ -72,20 +72,32 @@ def upload_model():
             if not os.path.exists(outputdir):
                 os.makedirs(outputdir)
 
-            #big_shp = read_step_file(modelfile)
-            shapes_labels_colors = read_step_file_with_names_colors(modelfile)
-            shapes = []
-            #Export each subshape
-            for shpt_lbl_color in shapes_labels_colors:
-                label, c = shapes_labels_colors[shpt_lbl_color]
-                tess = ShapeTesselator(shpt_lbl_color)
+            big_shp = read_step_file(modelfile)
+            #shapes_labels_colors = read_step_file_with_names_colors(modelfile)
+            #shapes = []
+            all_subshapes = TopologyExplorer(big_shp).solids()
+            i = 0
+            for single_shape in all_subshapes:
+                tess = ShapeTesselator(single_shape)
                 tess.Compute(compute_edges=False, mesh_quality=0.5)
-                jsonfile = label + ".json"
+                jsonfile = filename + "_" + str(i) + ".json"
                 with open(os.path.join(outputdir, jsonfile), "w") as text_file:
-                    json_shape = tess.ExportShapeToThreejsJSONString(label)
+                    json_shape = tess.ExportShapeToThreejsJSONString(filename + "_" + str(i))
                     json_shape = json_shape.replace("data\\", "data/")
                     json_shape = json_shape.replace("\\step_postprocessed\\", "/step_postprocessed/")
                     text_file.write(json_shape)
+                i+=1
+            #Export each subshape
+            #for shpt_lbl_color in shapes_labels_colors:
+            #    label, c = shapes_labels_colors[shpt_lbl_color]
+            #    tess = ShapeTesselator(shpt_lbl_color)
+            #    tess.Compute(compute_edges=False, mesh_quality=0.5)
+            #    jsonfile = label + ".json"
+            #    with open(os.path.join(outputdir, jsonfile), "w") as text_file:
+            #        json_shape = tess.ExportShapeToThreejsJSONString(label)
+            #        json_shape = json_shape.replace("data\\", "data/")
+            #        json_shape = json_shape.replace("\\step_postprocessed\\", "/step_postprocessed/")
+            #        text_file.write(json_shape)
             return redirect(url_for('modelview', modelname = filename))
 
     return render_template("public/upload.html")
