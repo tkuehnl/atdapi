@@ -2,7 +2,9 @@ from app import app
 
 from flask import render_template
 from flask import request, redirect, url_for, send_from_directory, jsonify
+from zipfile import ZipFile
 import os
+from os.path import basename
 
 from OCC.Extend.DataExchange import read_step_file
 from OCC.Core.Tesselator import ShapeTesselator
@@ -56,6 +58,17 @@ def singlemodelview(modelname,model):
 def send_uploads(path):
     return send_from_directory('uploads', path)
 
+def zipFilesInDir(dirName, zipFileName, filter):
+    with ZipFile(zipFileName, 'w') as zipObj:
+       # Iterate over all the files in directory
+       for folderName, subfolders, filenames in os.walk(dirName):
+           for filename in filenames:
+               if filter(filename):
+                   # create complete filepath of file in directory
+                   filePath = os.path.join(folderName, filename)
+                   # Add file to zip
+                   zipObj.write(filePath, basename(filePath))
+
 @app.route("/upload-model", methods=["GET", "POST"])
 def upload_model():
 
@@ -87,6 +100,9 @@ def upload_model():
                     json_shape = json_shape.replace("\\step_postprocessed\\", "/step_postprocessed/")
                     text_file.write(json_shape)
                 i+=1
+            #createZipFile
+            zipfileName = os.path.join(outputdir, filename + ".zip")
+            zipFilesInDir(outputdir, zipfileName, lambda name : 'json' in name)
             #Export each subshape
             #for shpt_lbl_color in shapes_labels_colors:
             #    label, c = shapes_labels_colors[shpt_lbl_color]

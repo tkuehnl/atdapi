@@ -15,6 +15,7 @@
             <h5 class="card-title">{{ modelname }}</h5>
             <hr>
             <a href="/uploads/{{ modelname }}/{{ model }}" class="btn btn-info" role="button">View JSON</a>
+            <a href="/uploads/{{ modelname }}/{{ modelname }}.zip" class="btn btn-info" role="button">ZipFile</a>
             {% for model in models %}
                 <li class="collection-item"><a href="/modelview/{{ modelname }}/{{ model }}">{{ model }}</a></li>
             {% endfor %}
